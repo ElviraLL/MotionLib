@@ -8,6 +8,10 @@ import sys
 import joblib
 import numpy as np
 from scipy.spatial.transform import Rotation as sRot
+from scipy.interpolate import interp1d
+from scipy.spatial.transform import Slerp
+
+
 import torch
 from typing import Union
 from tqdm import tqdm
@@ -55,6 +59,58 @@ def convert_yup_to_zup_translation(
     return root_translations
 
 
+def interpolate_motion(root_translations, local_rotations, current_fps, target_fps):
+    """
+    Interpolates the motion data from current_fps to target_fps.
+
+    Args:
+        root_translations (np.array): Shape (N, J, 3), root translations for N frames, J joints.
+        local_rotations (np.array): Shape (N, J, 4), local rotations in quaternion for N frames, J joints.
+        current_fps (int): Current frames per second of the motion data.
+        target_fps (int): Target frames per second for the interpolation.
+
+    Returns:
+        tuple: interpolated_root_translations, interpolated_local_rotations
+    """
+    # Calculate the number of current frames and the desired number of frames
+    num_current_frames = root_translations.shape[0]
+    num_target_frames = int(num_current_frames * (target_fps / current_fps))
+    duration = num_current_frames / current_fps
+    original_timestamps = np.linspace(0, num_current_frames / current_fps, num_current_frames, endpoint=False)
+    target_timestamps = np.linspace(0, duration, num_target_frames, endpoint=False)
+
+
+    # Create new frame indices for interpolation
+    current_frame_indices = np.linspace(0, num_current_frames - 1, num=num_current_frames)
+    target_frame_indices = np.linspace(0, num_current_frames - 1, num=num_target_frames)
+
+    # Interpolate root translations using linear interpolation        
+    interpolation_func = interp1d(original_timestamps, root_translations, axis=0, kind='linear', fill_value="extrapolate")
+    interpolated_root_translations = interpolation_func(target_timestamps)
+
+    # Prepare rotation interpolation
+    # Process each joint separately
+    num_joints = local_rotations.shape[1]
+    interpolated_local_rotations = np.zeros((num_target_frames, num_joints, 4))
+    for joint in range(num_joints):
+        # Extract quaternions for the current joint across all frames
+        joint_quaternions = local_rotations[:, joint, :]
+        
+        # Create a Rotation object from the joint quaternions
+        rotation_obj = sRot.from_quat(joint_quaternions)
+        
+        # Initialize the Slerp interpolator with original times and rotations
+        slerp_interpolator = Slerp(current_frame_indices, rotation_obj)
+        
+        # Interpolate to find the rotations at the target times
+        interpolated_rotations = slerp_interpolator(target_frame_indices)
+        
+        # Convert the interpolated rotations back to quaternions
+        interpolated_local_rotations[:, joint, :] = interpolated_rotations.as_quat()
+
+    return interpolated_root_translations, interpolated_local_rotations
+
+
 def process_single_person(person_path, save_path, upright_start=True):
     """
     We need upright_start in our case
@@ -92,6 +148,10 @@ def process_single_person(person_path, save_path, upright_start=True):
     pose_quat_isaac = (
         sRot.from_rotvec(pose_aa_isaac.reshape(-1, 3)).as_quat().reshape(N, 19, 4)
     )  # TODO: why reshape here?
+    
+    # interpolate the motion data to 30 fps
+    root_trans, pose_quat_isaac = interpolate_motion(root_trans, pose_quat_isaac, 15, 30)
+    N = root_trans.shape[0]
 
     skeleton_tree = SkeletonTree.from_mjcf(
         "./conversion/data/mjcf/smpl_humanoid_19.xml"
@@ -100,6 +160,7 @@ def process_single_person(person_path, save_path, upright_start=True):
         torch.from_numpy(root_trans) + skeleton_tree.local_translation[0]
     )  # TODO: why add offset here? #[234, 3]
 
+    
     new_sk_state = SkeletonState.from_rotation_and_root_translation(
         skeleton_tree,
         torch.from_numpy(pose_quat_isaac),
@@ -173,7 +234,7 @@ def process_all_data(motion_data_folder, save_folder):
 
 if __name__ == "__main__":
     motion_data_folder = "/home/jing/Documents/projs/CORE4D/human_object_motions"
-    # sequence_name = '20231002/003'
     save_folder = "/home/jing/Documents/projs/CORE4D/isaac_npys"
-    # process_core4d_data(motion_data_folder, sequence_name, save_folder)
-    process_all_data(motion_data_folder, save_folder)
+    sequence_name = '20231002/004'
+    process_core4d_data(motion_data_folder, sequence_name, save_folder)
+    # process_all_data(motion_data_folder, save_folder)

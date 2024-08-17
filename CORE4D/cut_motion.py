@@ -71,6 +71,6 @@ if __name__ == "__main__":
     cut_motion_file(
         "/home/jing/Documents/projs/CORE4D/isaac_npys/20231002_004/person1_motion.npy",
         "/home/jing/Documents/projs/CORE4D/cutted_isaac_npys",
-        0.45,
-        0.62,
+        0.21,
+        0.89,
     )
