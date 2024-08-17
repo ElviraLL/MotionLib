@@ -8,4 +8,5 @@ A motion data preprocess repo, reads motion sequence, coordinate system conversi
 3. Motion data preprocess
     - convert the poses to relative to root
     - normalize the root starting direction
+4. Visualize motion in blender
 4. Change Skeleton

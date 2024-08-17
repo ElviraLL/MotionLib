@@ -53,7 +53,7 @@ def _get_cls(name):
 
 
 class NumpyEncoder(json.JSONEncoder):
-    """ Special json encoder for numpy types """
+    """Special json encoder for numpy types"""
 
     def default(self, obj):
         if isinstance(
@@ -88,14 +88,14 @@ def json_numpy_obj_hook(dct):
 
 
 class Serializable:
-    """ Implementation to read/write to file.
-    All class the is inherited from this class needs to implement to_dict() and 
+    """Implementation to read/write to file.
+    All class the is inherited from this class needs to implement to_dict() and
     from_dict()
     """
 
     @abstractclassmethod
     def from_dict(cls, dict_repr, *args, **kwargs):
-        """ Read the object from an ordered dictionary
+        """Read the object from an ordered dictionary
 
         :param dict_repr: the ordered dictionary that is used to construct the object
         :type dict_repr: OrderedDict
@@ -106,15 +106,15 @@ class Serializable:
 
     @abstractmethod
     def to_dict(self):
-        """ Construct an ordered dictionary from the object
-        
+        """Construct an ordered dictionary from the object
+
         :rtype: OrderedDict
         """
         pass
 
     @classmethod
     def from_file(cls, path, *args, **kwargs):
-        """ Read the object from a file (either .npy or .json)
+        """Read the object from a file (either .npy or .json)
 
         :param path: path of the file
         :type path: string
@@ -136,40 +136,55 @@ class Serializable:
             original_node_names = skeleton_tree["node_names"]
             original_parent_indices = skeleton_tree["parent_indices"]["arr"]
 
-            old_to_new_index = {old_idx: new_idx for new_idx, old_idx in enumerate(selected_ids)}
+            old_to_new_index = {
+                old_idx: new_idx for new_idx, old_idx in enumerate(selected_ids)
+            }
 
             new_node_names = [original_node_names[idx] for idx in selected_ids]
             new_parent_indices = []
+
             def find_valid_parent(idx):
                 original_parent_idx = original_parent_indices[idx]
                 # Check if the parent is in the selected skeleton_ids
-                while original_parent_idx not in skeleton_ids and original_parent_idx != -1:
+                while (
+                    original_parent_idx not in skeleton_ids
+                    and original_parent_idx != -1
+                ):
                     original_parent_idx = original_parent_indices[original_parent_idx]
                 # Return the new index if valid parent found, else -1
                 return old_to_new_index.get(original_parent_idx, -1)
-            
+
             for idx in skeleton_ids:
                 new_parent_idx = find_valid_parent(idx)
                 new_parent_indices.append(new_parent_idx)
 
             updated_skelton_tree = OrderedDict()
             updated_skelton_tree["node_names"] = new_node_names
-            updated_skelton_tree["parent_indices"] = {"arr": np.array(new_parent_indices), 'context': {'dtype': 'int64'}}
-            updated_skelton_tree['local_translation'] = {'arr': skeleton_tree['local_translation']['arr'][selected_ids], 'context': {'dtype': 'float32'}}
+            updated_skelton_tree["parent_indices"] = {
+                "arr": np.array(new_parent_indices),
+                "context": {"dtype": "int64"},
+            }
+            updated_skelton_tree["local_translation"] = {
+                "arr": skeleton_tree["local_translation"]["arr"][selected_ids],
+                "context": {"dtype": "float32"},
+            }
             return updated_skelton_tree
 
-
         skeleton_ids = kwargs.get("skeleton_ids", None)
-        if skeleton_ids is not None and len(skeleton_ids) < len(d['skeleton_tree']['node_names']):
-            d['rotation']['arr'] = d['rotation']['arr'][:, skeleton_ids]
-            d['global_velocity']['arr'] = d['global_velocity']['arr'][:, skeleton_ids]
-            d['global_angular_velocity']['arr'] = d['global_angular_velocity']['arr'][:, skeleton_ids]
-            d['skeleton_tree'] = update_skeleton_tree(d['skeleton_tree'], skeleton_ids)
+        if skeleton_ids is not None and len(skeleton_ids) < len(
+            d["skeleton_tree"]["node_names"]
+        ):
+            d["rotation"]["arr"] = d["rotation"]["arr"][:, skeleton_ids]
+            d["global_velocity"]["arr"] = d["global_velocity"]["arr"][:, skeleton_ids]
+            d["global_angular_velocity"]["arr"] = d["global_angular_velocity"]["arr"][
+                :, skeleton_ids
+            ]
+            d["skeleton_tree"] = update_skeleton_tree(d["skeleton_tree"], skeleton_ids)
 
         return cls.from_dict(d, *args, **kwargs)
 
     def to_file(self, path: str) -> None:
-        """ Write the object to a file (either .npy or .json)
+        """Write the object to a file (either .npy or .json)
 
         :param path: path of the file
         :type path: string

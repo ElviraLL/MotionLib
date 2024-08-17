@@ -56,9 +56,11 @@ CORE4D dataset is recorded in smplx's format skeleton:
     53: 'right_thumb2',
     54: 'right_thumb3'
 """
+
 import numpy as np
 import smplx
 import torch
+
 
 def read_core4D_data(file_path):
     """
@@ -74,7 +76,7 @@ def read_core4D_data(file_path):
         left_hand_pose:   [N_frame, 12]        numpy.float32, denotes the human's left hand pose in each frame. The hand pose is defined in PCA space with 12 DoF.
         right_hand_pose:  [N_frame, 12]        numpy.float32, denotes the human's right hand pose in each frame. The hand pose is defined in PCA space with 12 DoF.
     """
-    data = dict(np.load(open(file_path, "rb"), allow_pickle=True))['arr_0'].item()
+    data = dict(np.load(open(file_path, "rb"), allow_pickle=True))["arr_0"].item()
     return data
 
 
@@ -89,17 +91,17 @@ def forward_smplx(human_motion):
 
     # create SMPLX model
     smplx_model = smplx.create(
-        './data', 
-        model_type='smplx', 
-        gender='neutral', 
-        batch_size=N_frame, 
-        use_face_contour=False, 
-        num_betas=10, 
-        num_expression_coeffs=10, 
-        ext="pkl", 
-        use_pca=True, 
-        num_pca_comps=12, 
-        flat_hand_mean=True
+        "./data",
+        model_type="smplx",
+        gender="neutral",
+        batch_size=N_frame,
+        use_face_contour=False,
+        num_betas=10,
+        num_expression_coeffs=10,
+        ext="pkl",
+        use_pca=True,
+        num_pca_comps=12,
+        flat_hand_mean=True,
     )
     smplx_model.to(device)
 
@@ -111,13 +113,19 @@ def forward_smplx(human_motion):
         "body_pose": torch.from_numpy(human_motion["body_pose"]).to(device),
         "left_hand_pose": torch.from_numpy(human_motion["left_hand_pose"]).to(device),
         "right_hand_pose": torch.from_numpy(human_motion["right_hand_pose"]).to(device),
-        "expression": torch.from_numpy(human_motion["expression"]).to(device)
+        "expression": torch.from_numpy(human_motion["expression"]).to(device),
     }
 
     # SMPLX forward
-    results = smplx_model(betas=SMPLX_params["betas"], body_pose=SMPLX_params["body_pose"], global_orient=SMPLX_params["global_orient"], transl=SMPLX_params["transl"], left_hand_pose=SMPLX_params["left_hand_pose"], right_hand_pose=SMPLX_params["right_hand_pose"])
+    results = smplx_model(
+        betas=SMPLX_params["betas"],
+        body_pose=SMPLX_params["body_pose"],
+        global_orient=SMPLX_params["global_orient"],
+        transl=SMPLX_params["transl"],
+        left_hand_pose=SMPLX_params["left_hand_pose"],
+        right_hand_pose=SMPLX_params["right_hand_pose"],
+    )
     print(results)
-
 
 
 if __name__ == "__main__":
