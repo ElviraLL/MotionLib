@@ -202,6 +202,14 @@ def process_single_person(motion_data, save_path, upright_start=True):
             .reshape(N, -1, 4)
         )
 
+        rot_x_180 = sRot.from_euler("x", 180, degrees=True)
+        # rotate the root joint 180 degree around x axis
+        pose_quat_global = (
+            (rot_x_180 * sRot.from_quat(pose_quat_global.reshape(-1, 4)))
+            .as_quat()
+            .reshape(N, -1, 4)
+        )
+
         new_sk_state = SkeletonState.from_rotation_and_root_translation(
             skeleton_tree,
             torch.from_numpy(pose_quat_global),
@@ -234,4 +242,4 @@ if __name__ == "__main__":
     # Process and save motion data for person 1
     process_single_person(person_1_motion, "./test_1.npy")
     # Uncomment to process person 2
-    # process_single_person(person_2_motion)
+    process_single_person(person_2_motion, "./test_2.npy")
