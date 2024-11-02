@@ -233,8 +233,8 @@ def process_all_data(motion_data_folder, save_folder):
 
 
 if __name__ == "__main__":
-    motion_data_folder = "/home/jing/Documents/projs/CORE4D/human_object_motions"
-    save_folder = "/home/jing/Documents/projs/CORE4D/isaac_npys"
+    motion_data_folder = "/home/jing/projs/CORE4D/human_object_motions"
+    save_folder = "/home/jing/projs/CORE4D/isaac_npys"
     sequence_name = '20231002/004'
     process_core4d_data(motion_data_folder, sequence_name, save_folder)
     # process_all_data(motion_data_folder, save_folder)

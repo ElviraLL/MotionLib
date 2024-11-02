@@ -129,6 +129,6 @@ def forward_smplx(human_motion):
 
 
 if __name__ == "__main__":
-    file_path = "/home/jing/Documents/projs/ASE/data/CORE4D/human_object_motions/20231002/003/person1_poses.npz"
+    file_path = "/home/jing/projs/ASE/data/CORE4D/human_object_motions/20231002/003/person1_poses.npz"
     data = read_core4D_data(file_path)
     forward_smplx(data)
