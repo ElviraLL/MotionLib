@@ -30,7 +30,7 @@ from poselib.poselib.skeleton.skeleton3d import (
 from conversion.smpl_to_isaac import *
 from conversion.const import (
     SMPL_BONE_ORDER_NAMES,
-    SMPL_ISAAC_NAMES,
+    SMPL_ISAAC_NAMES_24,
     SMPLX_BONE_ORDER_NAMES,
     SMPL2SMPLX,
 )
@@ -144,28 +144,33 @@ def convert_yup_to_zup_translation(
 
 
 def process_single_person(motion_data, save_path, upright_start=True):
-    smpl_joints_3d = motion_data["smpl_joints_3d"]  # [N_frames, 24, 3]
-    poses = motion_data["poses"]  # [N_frames, 72]
-    root_trans = motion_data["trans"]  # [N_frames, 3]
+    smpl_joints_3d = motion_data["smpl_joints_3d"]  # [N_frames, 24, 3] 140, 24, 3
+    poses = motion_data["poses"]  # [N_frames, 72] # 140, 72
+    root_trans = motion_data["trans"]  # [N_frames, 3] # 140, 3
     global_orient = poses[:, :3]
+    num_joints = smpl_joints_3d.shape[1]
 
     N_frames = smpl_joints_3d.shape[0]
     pose_aa = poses.reshape(N_frames, -1, 3)
     N = pose_aa.shape[0]
-    smplx_body_joint_names = SMPLX_BONE_ORDER_NAMES
-    smplx_2_isaac = [smplx_body_joint_names.index(SMPL2SMPLX[q]) for q in SMPL_ISAAC_NAMES if SMPL2SMPLX[q] in smplx_body_joint_names]
+    # smplx_body_joint_names = SMPLX_BONE_ORDER_NAMES
+
+    mujoco_joint_names = ['Pelvis', 'L_Hip', 'L_Knee', 'L_Ankle', 'L_Toe', 'R_Hip', 'R_Knee', 'R_Ankle', 'R_Toe', 'Torso', 'Spine', 'Chest', 'Neck', 'Head', 'L_Thorax', 'L_Shoulder', 'L_Elbow', 'L_Wrist', 'L_Hand', 'R_Thorax', 'R_Shoulder', 'R_Elbow', 'R_Wrist', 'R_Hand']
+
+
+    smplx_2_isaac = [SMPL_BONE_ORDER_NAMES.index(q) for q in mujoco_joint_names if q in SMPL_BONE_ORDER_NAMES] 
     pose_aa_isaac = pose_aa[:, smplx_2_isaac]
     pose_quat_isaac = (
-        sRot.from_rotvec(pose_aa_isaac.reshape(-1, 3)).as_quat().reshape(N, 19, 4)
+        sRot.from_rotvec(pose_aa_isaac.reshape(-1, 3)).as_quat().reshape(N, num_joints, 4)
     )  # TODO: why reshape here?
     
     # interpolate the motion data to 30 fps
-    root_trans, pose_quat_isaac = interpolate_motion(root_trans, pose_quat_isaac, 15, 30)
-    N = root_trans.shape[0]
+    # root_trans, pose_quat_isaac = interpolate_motion(root_trans, pose_quat_isaac, 15, 30)
+    # N = root_trans.shape[0]
 
     skeleton_tree = SkeletonTree.from_mjcf(
-        "./conversion/data/mjcf/smpl_humanoid_19.xml"
-    )  # 19 bone's skeleton_tree
+        "./conversion/data/mjcf/smpl_humanoid_24.xml"
+    )  
     root_trans_offset = (
         torch.from_numpy(root_trans) + skeleton_tree.local_translation[0]
     )  # TODO: why add offset here? #[234, 3]

@@ -97,6 +97,8 @@ SMPL2SMPLX = {
     "R_Elbow": "right_elbow",
     "L_Wrist": "left_wrist",
     "R_Wrist": "right_wrist",
+    "L_Hand": "left_hand",
+    "R_Hand": "right_hand",
 }
 
 SMPLX_BONE_ORDER_NAMES = [
@@ -156,3 +158,32 @@ SMPLX_BONE_ORDER_NAMES = [
     "right_thumb2",
     "right_thumb3",
 ]
+
+SMPL_ISAAC_NAMES_24 = [
+    "Pelvis",
+    "L_Hip",
+    "L_Knee",
+    "L_Ankle",
+    "L_Toe",
+    "R_Hip",
+    "R_Knee",
+    "R_Ankle",
+    "R_Toe",
+    "Torso",
+    "Spine",
+    "Chest",
+    "Neck",
+    "Head",
+    "L_Thorax",
+    "L_Shoulder",
+    "L_Elbow",
+    "L_Wrist",
+    "L_Hand",
+    "R_Thorax",
+    "R_Shoulder",
+    "R_Elbow",
+    "R_Wrist",
+    "R_Hand",
+]
+
+
